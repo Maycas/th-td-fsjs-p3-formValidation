@@ -8,6 +8,10 @@ var $jobRoleSelect = $("#title"); // job role select
 var $otherTitleInput = $("#other-title"); // 'Other' job role input
 var $designSelect = $("#design"); // Design select
 var $colorSelect = $("#color"); // Color select
+var colors; // Array to store the different color values 
+var noDesign = [],
+    jsPuns = [],
+    heartJs = []; // Arrays of the different colors for the different patterns
 var $activitiesCheckboxes = $("input[type='checkbox']"); // Activity checkboxes
 var price = 0; // Total price
 var $paymentMethodSelect = $("#payment"); // Payment select method();
@@ -32,13 +36,18 @@ var init = function() {
     // Initialize the color select
     setupColorSelect();
 
+    // Remove the color options from the dropdown and store them in different color variables
+    // The reason behind this is explained in 'showColorOptions'
+    colors = $colorSelect.children().remove();
+    classifyColors();
+
     // Insert the price placeholder (empty at the beginning)
     $(".activities").append("<p class='price'></p>");
 
     // Hide all the payment options (the messages will be displayed as soon as the user selects an option)
     hideAllPaymentOptions();
 
-    // Credit card must be selected by default
+    // Credit card form must be shown and selected by default
     $paymentMethodSelect.val("credit card");
     $creditCardForm.show();
 
@@ -64,11 +73,29 @@ var registerListeners = function() {
     $submitButton.click(checkValidForm).click(displayErrorMessages);
 };
 
-// T-shirt colors - Add a new option requesting the user to select a design before selecting the color and hide all the others
+// Setup the initial behavior of the color select menu
 var setupColorSelect = function() {
-    $colorSelect.children().hide();
+    // Hide the colorSelect menu and the label at the beginning  
+    $colorSelect.hide();
+    $colorSelect.prev().hide(); // Hide the label
+
+    // Add a new option requesting the user to select a design before selecting the color
     $colorSelect.children().first().before("<option value='none'>&lt;-- Please select a T-shirt Theme</option>");
     $colorSelect.val($colorSelect.children().first().val()); // Set this newly added option as selected
+};
+
+
+// Classifies colors in the different designs
+var classifyColors = function() {
+    for (var i = 0; i < colors.length; i++) {
+        if ($(colors[i]).val() === "none") {
+            noDesign = $(colors[i]);
+        } else if ($(colors[i]).text().indexOf("JS Puns") > -1) {
+            jsPuns.push($(colors[i]));
+        } else {
+            heartJs.push($(colors[i]));
+        }
+    }
 };
 
 // Function to show the 'Other role' input field in case 'Other' is selected
@@ -83,48 +110,37 @@ var setOtherInputField = function() {
 
 // Shows the correct color options depending on the chosen design
 var showColorOptions = function() {
-    var punsColors = ["cornflowerblue", "darkslategrey", "gold"];
-    var heartColors = ["tomato", "steelblue", "dimgrey"];
-
-    // Hide all the options
-    $colorSelect.children().hide();
-
-    /*
-        Found a limitation with Safari browser when hiding option items inside of a select:
-            The code below works for Chrome and Firefox, for Safari (and apparently IE), even though the 
-            display:none is applied correctly in the HTML, all options are still shown
-        This limitation is documented here: http://stackoverflow.com/questions/15025555/option-style-display-none-not-working-in-safari
-        The workaround for this is removing and re-appending the nodes (not applied on this version)
-    */
-    // TODO: Solve limitation in Safari web browsers. For the time being this is working fine with Chrome and Firefox
-    if ($(this).val() === "js puns") {
-        // Show the 3 options for js puns
-        for (var i = 0; i < punsColors.length; i++) {
-            $('option[value=' + punsColors[i] + ']').show();
-        }
-    } else if ($(this).val() === "heart js") {
-        // Show the 3 options for heart js
-        for (var j = 0; j < heartColors.length; j++) {
-            $('option[value=' + heartColors[j] + ']').show();
-        }
+    // Show the color label and the selector in case a design is selected and hide it otherwise
+    if ($designSelect.val() !== "Select Theme") {
+        $colorSelect.show();
+        $colorSelect.prev().show(); // Show the label
     } else {
-        // Show only the option to select a T-shirt
-        $("option[value='none']").show();
+        $colorSelect.hide();
+        $colorSelect.prev().hide(); // Hide the label
     }
 
-    // Set the first visible children as the selected value
-    /* 
-        Found a jquery limitation when using webkit:
-            The selector $colorSelect.find(":visible:first").val() doesn't return a value
-        The approach below works for all browsers
+    /*
+        Found a limitation with Safari browser when hiding option items inside of a select. Even though the display:none is 
+        applied correctly in the HTML, all options are still shown in Safari (and presumably in IE)
+        This limitation is documented here: http://stackoverflow.com/questions/15025555/option-style-display-none-not-working-in-safari
+        The workaround for this is removing and re-appending the nodes
     */
-    $colorSelect.children().each(function() {
-        if ($(this).css("display") !== "none") {
-            $colorSelect.val($(this).val());
-            // Break the loop
-            return false;
-        }
-    });
+    // Remove all the color options
+    $colorSelect.children().remove();
+
+    if ($(this).val() === "js puns") {
+        // Show the 3 options for js puns
+        $colorSelect.append(jsPuns);
+    } else if ($(this).val() === "heart js") {
+        // Show the 3 options for heart js
+        $colorSelect.append(heartJs);
+    } else {
+        // Show only the option to select a T-shirt
+        $colorSelect.append(noDesign);
+    }
+
+    // Select the first children as the selected value
+    $colorSelect.val($colorSelect.children().first().val());
 };
 
 // Calculates the total price of the activities selected
@@ -273,9 +289,42 @@ var isCreditCardValid = function() {
     return isCCNumberValid() && isZipValid() && isCVVValid();
 };
 
-// Check if the credit card is not empty or if it's a number
+// Check if the credit card number is correct following the algorithm described in:
+// http://www.freeformatter.com/credit-card-number-generator-validator.html#validate
 var isCCNumberValid = function() {
-    return $("#cc-num").val() !== "" && !isNaN($("#cc-num").val());
+    var ccNumber = $("#cc-num").val(); // Value introduced in the input
+    var ccNumberInt = []; // Array to store the numbers 
+
+    // Parse the ccNumber into an string (to ease manipulation)
+    var ccNumberStr = ccNumber.split('');
+
+    // Drop the last digit
+    var lastDigit = parseInt(ccNumberStr.pop());
+
+    // Reverse the ccNumberStr
+    ccNumberStr = ccNumberStr.reverse();
+
+    for (var i in ccNumberStr) {
+        var currNumber = parseInt(ccNumberStr[i]);
+        // Multiply digits in odd positions by 2 
+        // Should take into account the 0 index in JS, so need to apply this to even positions in the array
+        if (i % 2 === 0) {
+            currNumber *= 2;
+        }
+        // Substract 9 to numbers over 9
+        if (currNumber > 9) {
+            currNumber -= 9;
+        }
+        ccNumberInt.push(currNumber);
+    }
+
+    // Add all the numbers in the array
+    var sum = 0;
+    for (var j in ccNumberInt) {
+        sum += ccNumberInt[j];
+    }
+
+    return sum % 10 === lastDigit;
 };
 
 // Check if the zip number is not empty or if it's a number
