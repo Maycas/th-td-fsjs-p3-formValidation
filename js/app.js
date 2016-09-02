@@ -11,7 +11,7 @@ var $colorSelect = $("#color"); // Color select
 var colors; // Array to store the different color values 
 var noDesign = [],
     jsPuns = [],
-    heartJs = []; // Arrays of the different colors for the different patterns
+    heartJs = []; // Arrays for the different colors associated to the different patterns
 var $activitiesCheckboxes = $("input[type='checkbox']"); // Activity checkboxes
 var price = 0; // Total price
 var $paymentMethodSelect = $("#payment"); // Payment select method();
@@ -123,7 +123,7 @@ var showColorOptions = function() {
         Found a limitation with Safari browser when hiding option items inside of a select. Even though the display:none is 
         applied correctly in the HTML, all options are still shown in Safari (and presumably in IE)
         This limitation is documented here: http://stackoverflow.com/questions/15025555/option-style-display-none-not-working-in-safari
-        The workaround for this is removing and re-appending the nodes
+        The workaround for this is removing and re-appending the nodes (this is the strategy I decided to follow)
     */
     // Remove all the color options
     $colorSelect.children().remove();
