@@ -1,6 +1,6 @@
-/****************************
+/***************************
 GLOBAL VARIABLES
-/***************************/
+***************************/
 
 var $userName = $("#name"); // user name input field
 var $email = $("#mail"); // email input field
@@ -8,10 +8,10 @@ var $jobRoleSelect = $("#title"); // job role select
 var $otherTitleInput = $("#other-title"); // 'Other' job role input
 var $designSelect = $("#design"); // Design select
 var $colorSelect = $("#color"); // Color select
-var colors; // Array to store the different color values 
-var noDesign = [],
-    jsPuns = [],
-    heartJs = []; // Arrays for the different colors associated to the different patterns
+var colors; // Array to store the different color values
+var noDesign = [];
+var jsPuns = [];
+var heartJs = []; // Arrays for the different colors associated to the different patterns
 var $activitiesCheckboxes = $("input[type='checkbox']"); // Activity checkboxes
 var price = 0; // Total price
 var $paymentMethodSelect = $("#payment"); // Payment select method();
@@ -75,7 +75,7 @@ var registerListeners = function() {
 
 // Setup the initial behavior of the color select menu
 var setupColorSelect = function() {
-    // Hide the colorSelect menu and the label at the beginning  
+    // Hide the colorSelect menu and the label at the beginning
     $colorSelect.hide();
     $colorSelect.prev().hide(); // Hide the label
 
@@ -120,7 +120,7 @@ var showColorOptions = function() {
     }
 
     /*
-        Found a limitation with Safari browser when hiding option items inside of a select. Even though the display:none is 
+        Found a limitation with Safari browser when hiding option items inside of a select. Even though the display:none is
         applied correctly in the HTML, all options are still shown in Safari (and presumably in IE)
         This limitation is documented here: http://stackoverflow.com/questions/15025555/option-style-display-none-not-working-in-safari
         The workaround for this is removing and re-appending the nodes (this is the strategy I decided to follow)
@@ -293,10 +293,16 @@ var isCreditCardValid = function() {
 // http://www.freeformatter.com/credit-card-number-generator-validator.html#validate
 var isCCNumberValid = function() {
     var ccNumber = $("#cc-num").val(); // Value introduced in the input
-    var ccNumberInt = []; // Array to store the numbers 
+    var sum = 0; // Global sum variable to add the numbers of the card
+
+    // Accept only digits, numbers or spaces
+    if (/[^0-9-\s]+/.test(ccNumber)) {
+        return false;
+    }
+    ccNumber = ccNumber.replace(/\D/g, "");
 
     // Parse the ccNumber into an string (to ease manipulation)
-    var ccNumberStr = ccNumber.split('');
+    var ccNumberStr = ccNumber.split("");
 
     // Drop the last digit
     var lastDigit = parseInt(ccNumberStr.pop());
@@ -304,27 +310,24 @@ var isCCNumberValid = function() {
     // Reverse the ccNumberStr
     ccNumberStr = ccNumberStr.reverse();
 
-    for (var i in ccNumberStr) {
+    // Run through each number from the currNumberStr
+    for (var i = 0; i < ccNumberStr.length; i++) {
         var currNumber = parseInt(ccNumberStr[i]);
-        // Multiply digits in odd positions by 2 
+        // Multiply digits in odd positions by 2
         // Should take into account the 0 index in JS, so need to apply this to even positions in the array
         if (i % 2 === 0) {
             currNumber *= 2;
+            // Substract 9 to numbers over 9
+            if (currNumber > 9) {
+                currNumber -= 9;
+            }
         }
-        // Substract 9 to numbers over 9
-        if (currNumber > 9) {
-            currNumber -= 9;
-        }
-        ccNumberInt.push(currNumber);
-    }
 
-    // Add all the numbers in the array
-    var sum = 0;
-    for (var j in ccNumberInt) {
-        sum += ccNumberInt[j];
+        // Add this number to sum
+        sum += currNumber;
     }
-
-    return sum % 10 === lastDigit;
+    // Add the last number to the sum and make sure that it's a multiple of 10
+    return (sum + lastDigit) % 10 === 0;
 };
 
 // Check if the zip number is not empty or if it's a number
